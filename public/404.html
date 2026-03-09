@@ -7,12 +7,11 @@
     <script>
       // Single-page app redirect for GitHub Pages
       // Redirects 404 requests back to the app root
-      var pathSegmentsToKeep = 1; // keep '/htaccess-checker'
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/'
-      );
+      const pathSegmentsToKeep = 1; // keep '/htaccess-checker'
+      const loc = window.location;
+      const basePath = loc.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/');
+      const port = loc.port ? `:${loc.port}` : '';
+      loc.replace(`${loc.protocol}//${loc.hostname}${port}${basePath}/`);
     </script>
   </head>
   <body></body>
