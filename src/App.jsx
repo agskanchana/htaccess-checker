@@ -121,8 +121,8 @@ function runPhase1(rules, sitemapPaths) {
   });
 }
 
-// ─── Phase 2 — AI Analysis ────────────────────────────────────────────────────
-async function runPhase2(pendingRules, sitemapPaths, token) {
+// ─── Phase 2 — Gemini AI Analysis ────────────────────────────────────────────
+async function runPhase2(pendingRules, sitemapPaths, proxyUrl) {
   const rulesJson = JSON.stringify(
     pendingRules.map(({ type, from, to }) => ({ type, from, to })),
     null,
@@ -165,25 +165,20 @@ ${rulesJson}
 NEW SITE URLs:
 ${sitemapPathsStr}`;
 
-  const response = await fetch("https://api.githubcopilot.com/chat/completions", {
+  const response = await fetch(proxyUrl, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4.1",
-      messages: [{ role: "user", content: prompt }],
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
   });
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Copilot API error (${response.status}): ${body}`);
+    throw new Error(`Proxy error (${response.status}): ${body}`);
   }
 
   const data = await response.json();
-  const raw = data.choices[0].message.content;
+  if (data.error) throw new Error(`Gemini proxy returned error: ${data.error}`);
+  const raw = typeof data.text === "string" ? data.text : "";
   const clean = raw.replace(/```json|```/g, "").trim();
   return JSON.parse(clean);
 }
@@ -257,8 +252,9 @@ function Banner({ type, children }) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [token, setToken] = useState("");
-  const [showToken, setShowToken] = useState(false);
+  const [proxyUrl, setProxyUrl] = useState(
+    import.meta.env.VITE_GEMINI_PROXY_URL || ""
+  );
   const [htaccessText, setHtaccessText] = useState("");
   const [htaccessFileName, setHtaccessFileName] = useState("");
   const [sitemapUrl, setSitemapUrl] = useState("");
@@ -398,9 +394,9 @@ export default function App() {
 
       let aiResults;
       try {
-        aiResults = await runPhase2(pendingRules, sitemapPaths, token);
+        aiResults = await runPhase2(pendingRules, sitemapPaths, proxyUrl);
       } catch (err) {
-        setErrors([`Copilot API error — check your token and Copilot access. (${err.message})`]);
+        setErrors([`Gemini proxy error — check your proxy URL and Gemini API key. (${err.message})`]);
         setResults(
           phase1Results.map((r) =>
             r.status === "pending"
@@ -431,10 +427,10 @@ export default function App() {
     } finally {
       setRunning(false);
     }
-  }, [htaccessText, sitemapPaths, token]);
+  }, [htaccessText, sitemapPaths, proxyUrl]);
 
   const canRun =
-    token.trim() &&
+    proxyUrl.trim() &&
     htaccessText.trim() &&
     sitemapPaths.length > 0 &&
     !running;
@@ -479,36 +475,27 @@ export default function App() {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Inputs Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* 1. GitHub Token */}
+          {/* 1. Gemini Proxy URL */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
             <label className="block text-sm font-semibold text-gray-700">
-              GitHub Personal Access Token
+              Gemini Proxy URL
             </label>
-            <div className="relative">
-              <input
-                type={showToken ? "text" : "password"}
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="ghp_xxxxxxxxxxxx"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowToken((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs px-1 py-0.5 bg-transparent border-0"
-              >
-                {showToken ? "Hide" : "Show"}
-              </button>
-            </div>
+            <input
+              type="url"
+              value={proxyUrl}
+              onChange={(e) => setProxyUrl(e.target.value)}
+              placeholder="https://your-worker.workers.dev"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
             <p className="text-xs text-gray-400">
-              Needs Copilot access.{" "}
+              URL of your Cloudflare Worker proxy.{" "}
               <a
-                href="https://github.com/settings/tokens"
+                href="https://github.com/agskanchana/htaccess-checker#gemini-proxy-setup"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
-                Generate at github.com/settings/tokens
+                Setup instructions
               </a>
             </p>
           </div>
