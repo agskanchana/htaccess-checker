@@ -36,35 +36,132 @@ The Cloudflare Worker acts as a **serverless proxy**: the browser never sees the
 
 ## Gemini Proxy Setup
 
-### 1. Get a Gemini API Key
+Because this app runs entirely in the browser on GitHub Pages, it **cannot** embed your Gemini API key safely. The solution is a tiny **Cloudflare Worker** that sits between the browser and Gemini: the browser sends a prompt to the Worker, the Worker adds the secret key and calls Gemini, then returns the result. The key is never sent to — or stored in — the browser.
 
-1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Click **Create API key**
-3. Copy the key — you'll store it as a Worker secret (never in code)
-
-### 2. Deploy the Cloudflare Worker
-
-Prerequisites: [Node.js](https://nodejs.org) and a free [Cloudflare account](https://dash.cloudflare.com/sign-up).
-
-```bash
-cd worker
-npx wrangler login          # authenticate with Cloudflare (one-time)
-npx wrangler deploy         # deploy the Worker
+```
+GitHub Pages (browser)
+   │  POST { prompt: "…" }
+   ▼
+Cloudflare Worker  ◄── GEMINI_API_KEY stored as encrypted Worker secret
+   │  POST https://generativelanguage.googleapis.com/…?key=<secret>
+   ▼
+Google Gemini 1.5 Flash API
+   │  { candidates: […] }
+   ▼
+Worker extracts text → returns { text: "…" } to browser
 ```
 
-Note the Worker URL printed after deployment (e.g. `https://htaccess-checker-proxy.<your-subdomain>.workers.dev`).
+---
 
-### 3. Set the Gemini API Key as a Worker Secret
+### Step 1 — Get a Gemini API Key
+
+1. Open [Google AI Studio → API Keys](https://aistudio.google.com/app/apikey)
+2. Click **Create API key** (choose any project, or create a new one)
+3. Copy the key (starts with `AIza…`) — you will need it in Step 3
+
+> **Keep this key private.** Never paste it into source code or share it publicly.
+
+---
+
+### Step 2 — Create a Free Cloudflare Account
+
+1. Go to [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) and create a **free** account
+2. Verify your e-mail — no credit card is required for Workers
+
+---
+
+### Step 3 — Deploy the Cloudflare Worker
+
+You need [Node.js 18+](https://nodejs.org) installed locally.
+
+#### 3a. Authenticate with Cloudflare
 
 ```bash
 cd worker
+npx wrangler login
+```
+
+A browser window opens; log in with your Cloudflare account and click **Allow**.
+
+#### 3b. Deploy the Worker
+
+```bash
+npx wrangler deploy
+```
+
+Wrangler compiles `worker/index.js` and uploads it.  
+At the end you will see a line like:
+
+```
+Published htaccess-checker-proxy (0.00 sec)
+  https://htaccess-checker-proxy.<your-subdomain>.workers.dev
+```
+
+**Copy this URL** — you'll paste it into the app.
+
+#### 3c. Store the Gemini API Key as an encrypted secret
+
+```bash
 npx wrangler secret put GEMINI_API_KEY
-# paste your Gemini API key when prompted — it is stored encrypted in Cloudflare
 ```
 
-### 4. Configure the Proxy URL
+When prompted, paste the `AIza…` key you copied in Step 1 and press **Enter**.  
+The key is stored encrypted inside Cloudflare and is never visible after this point.
 
-Enter your Cloudflare Worker URL in the **Gemini Proxy URL** field in the app before running validation.
+---
+
+### Step 4 — Verify the Worker is Running
+
+Open the Worker URL in a browser (GET request). You should see:
+
+```json
+{ "ok": true, "model": "gemini-1.5-flash" }
+```
+
+If you see `{"error":"GEMINI_API_KEY secret is not configured"}` go back to Step 3c.
+
+---
+
+### Step 5 — Configure the App
+
+1. Open the live app: **https://agskanchana.github.io/htaccess-checker/**
+2. Paste your Worker URL (e.g. `https://htaccess-checker-proxy.abc123.workers.dev`) into the **Gemini Proxy URL** field
+3. Fill in the `.htaccess` content and sitemap URL, then click **Run Validation**
+
+The app saves nothing server-side — every field is local to your browser session.
+
+---
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `Proxy error (500): {"error":"GEMINI_API_KEY secret is not configured"}` | Secret not set | Run `npx wrangler secret put GEMINI_API_KEY` again |
+| `Proxy error (400)` | Bad request body | Check the Worker URL is correct (no trailing `/`) |
+| `Failed to fetch` in browser | CORS or Worker not deployed | Redeploy with `npx wrangler deploy` |
+| `SyntaxError` parsing Gemini response | Gemini returned markdown fences | Already handled — report the raw response in an issue |
+| Worker URL works in browser but app says "Proxy error" | Trailing slash in URL | Remove the trailing slash from the Proxy URL field |
+
+---
+
+### Local Development with the Worker
+
+You can run the Worker locally for faster iteration:
+
+```bash
+cd worker
+npx wrangler dev --port 8787
+```
+
+Then set the proxy URL in the app to `http://localhost:8787`.
+
+To set the API key for local development, create `worker/.dev.vars`:
+
+```ini
+GEMINI_API_KEY=AIza...your-key-here
+```
+
+> **Never commit `.dev.vars`** — it is already in `.gitignore`.
 
 ---
 
@@ -76,16 +173,7 @@ Open `index.html` directly in your browser, or use any static file server:
 npx serve .
 ```
 
-The **Gemini Proxy URL** field must be filled with a deployed Worker URL (or you can test with a local `wrangler dev` instance).
-
-### Run the Worker locally
-
-```bash
-cd worker
-npx wrangler dev --port 8787
-```
-
-Then set the proxy URL in the app to `http://localhost:8787`.
+The **Gemini Proxy URL** field must be filled with a deployed Worker URL (or you can test with a local `wrangler dev` instance — see the Troubleshooting section above for `.dev.vars` setup).
 
 ---
 

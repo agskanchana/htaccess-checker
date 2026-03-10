@@ -209,6 +209,8 @@ var state = {
 document.addEventListener("DOMContentLoaded", function () {
   // Element references
   var proxyInput = document.getElementById("proxy-url");
+  var proxyHelpToggle = document.getElementById("proxy-help-toggle");
+  var proxyHelpPanel = document.getElementById("proxy-help-panel");
   var dropZone = document.getElementById("drop-zone");
   var dropLabel = document.getElementById("drop-label");
   var fileInput = document.getElementById("htaccess-file-input");
@@ -229,6 +231,12 @@ document.addEventListener("DOMContentLoaded", function () {
   proxyInput.addEventListener("input", function () {
     state.proxyUrl = proxyInput.value;
     updateRunBtn();
+  });
+
+  // ── Proxy Help Toggle ──
+  proxyHelpToggle.addEventListener("click", function () {
+    var hidden = proxyHelpPanel.classList.toggle("hidden");
+    proxyHelpToggle.textContent = hidden ? "Quick guide ▾" : "Quick guide ▴";
   });
 
   // ── File Drop ──

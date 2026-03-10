@@ -7,8 +7,12 @@
  *
  * Deploy:
  *   cd worker
- *   npx wrangler secret put GEMINI_API_KEY   # paste your key when prompted
+ *   npx wrangler login
  *   npx wrangler deploy
+ *   npx wrangler secret put GEMINI_API_KEY   # paste your key when prompted
+ *
+ * Verify (open in browser — should return {"ok":true,"model":"gemini-1.5-flash"}):
+ *   https://htaccess-checker-proxy.<your-subdomain>.workers.dev
  */
 
 const GEMINI_MODEL = "gemini-1.5-flash";
@@ -27,6 +31,14 @@ export default {
     // Handle CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
+    }
+
+    // Health-check: GET returns model info so users can verify the Worker is running
+    if (request.method === "GET") {
+      return new Response(
+        JSON.stringify({ ok: true, model: GEMINI_MODEL }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders() } }
+      );
     }
 
     if (request.method !== "POST") {
