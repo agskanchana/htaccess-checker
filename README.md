@@ -102,10 +102,10 @@ Then set the proxy URL in the app to `http://localhost:8787`.
 
 ## Deployment to GitHub Pages
 
-Deployments are automatic: every push to `main` triggers the workflow at `.github/workflows/deploy.yml`, which builds the app and publishes `dist/` to GitHub Pages.
+Deployments are automatic: every push to `main` triggers the workflow at `.github/workflows/deploy.yml`, which builds the app and pushes the `dist/` output to the `gh-pages` branch.
 
 **One-time manual step** (only needed once):  
-Go to **Settings → Pages → Source** and select **GitHub Actions**.
+Go to **Settings → Pages → Source**, select **Deploy from a branch**, then choose the `gh-pages` branch and `/ (root)` folder.
 
 ---
 
