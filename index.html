@@ -33,7 +33,26 @@
             <p class="text-xs text-gray-400">
               URL of your Cloudflare Worker proxy.
               <a href="https://github.com/agskanchana/htaccess-checker#gemini-proxy-setup" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Setup instructions</a>
+              &nbsp;·&nbsp;
+              <button id="proxy-help-toggle" type="button" class="text-blue-500 hover:underline focus:outline-none">Quick guide ▾</button>
             </p>
+            <!-- Collapsible quick-setup guide -->
+            <div id="proxy-help-panel" class="hidden text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-2 leading-relaxed">
+              <p class="font-semibold text-gray-800">How to set up the Gemini Proxy (one-time)</p>
+              <ol class="list-decimal list-inside space-y-1">
+                <li>Get a free API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">aistudio.google.com</a></li>
+                <li>Create a free account at <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">cloudflare.com</a></li>
+                <li>Run in your terminal (Node.js required):
+                  <pre class="mt-1 bg-white border border-gray-200 rounded p-2 overflow-x-auto whitespace-pre font-mono text-xs">cd worker
+npx wrangler login
+npx wrangler deploy
+npx wrangler secret put GEMINI_API_KEY</pre>
+                </li>
+                <li>Copy the Worker URL printed after deploy (e.g. <span class="font-mono">https://htaccess-checker-proxy.abc.workers.dev</span>) and paste it above</li>
+                <li>Open the Worker URL in a browser to verify — it should return <span class="font-mono">{"ok":true}</span></li>
+              </ol>
+              <p class="text-gray-500">Your API key is stored encrypted in Cloudflare and is never sent to the browser. See the <a href="https://github.com/agskanchana/htaccess-checker#gemini-proxy-setup" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">full guide</a> for troubleshooting.</p>
+            </div>
           </div>
 
           <!-- 2. .htaccess File -->

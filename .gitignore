@@ -8,3 +8,7 @@
 *.njsproj
 *.sln
 *.sw?
+
+# Wrangler local dev secrets (never commit)
+worker/.dev.vars
+.dev.vars
