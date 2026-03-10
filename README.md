@@ -102,10 +102,10 @@ Then set the proxy URL in the app to `http://localhost:8787`.
 
 ## Deployment to GitHub Pages
 
-Deployments are automatic: every push to `main` triggers the workflow at `.github/workflows/deploy.yml`, which builds the app and deploys the `dist/` output to GitHub Pages using `actions/deploy-pages`.
+Deployments are automatic: every push to `main` triggers the workflow at `.github/workflows/deploy.yml`, which builds the app with Vite and pushes the `dist/` output to the `gh-pages` branch.
 
 **One-time manual step** (only needed once):  
-Go to **Settings → Pages → Source**, select **GitHub Actions**.
+Go to **Settings → Pages → Build and deployment → Source**, select **Deploy from a branch**, then choose **`gh-pages`** / **`/ (root)`**.
 
 ---
 
