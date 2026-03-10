@@ -1,6 +1,6 @@
 # .htaccess Redirect QA Validator
 
-A React + Vite app that validates `.htaccess` redirect rules against a sitemap and explains them using **Google Gemini AI**.
+A vanilla JavaScript app that validates `.htaccess` redirect rules against a sitemap and explains them using **Google Gemini AI**. Runs directly on GitHub Pages — no build step required.
 
 Live app: **https://agskanchana.github.io/htaccess-checker/**
 
@@ -64,30 +64,19 @@ npx wrangler secret put GEMINI_API_KEY
 
 ### 4. Configure the Proxy URL
 
-**Option A — hardcode at build time (recommended for your own deployment)**
-
-Add a repository secret in GitHub:
-- Go to **Settings → Secrets and variables → Actions → New repository secret**
-- Name: `VITE_GEMINI_PROXY_URL`
-- Value: your Worker URL (e.g. `https://htaccess-checker-proxy.example.workers.dev`)
-
-The GitHub Actions workflow already passes this secret to `npm run build`.  
-The proxy URL will be pre-filled in the app for all visitors.
-
-**Option B — enter it manually in the UI**
-
-Leave the secret unset. The proxy URL input field in the app will be empty; users paste their own Worker URL before running validation.
+Enter your Cloudflare Worker URL in the **Gemini Proxy URL** field in the app before running validation.
 
 ---
 
 ## Local Development
 
+Open `index.html` directly in your browser, or use any static file server:
+
 ```bash
-npm install
-npm run dev
+npx serve .
 ```
 
-The app runs at `http://localhost:5173/htaccess-checker/`. The **Gemini Proxy URL** field must be filled with a deployed Worker URL (or you can test with a local `wrangler dev` instance).
+The **Gemini Proxy URL** field must be filled with a deployed Worker URL (or you can test with a local `wrangler dev` instance).
 
 ### Run the Worker locally
 
@@ -102,9 +91,9 @@ Then set the proxy URL in the app to `http://localhost:8787`.
 
 ## Deployment to GitHub Pages
 
-Deployments are automatic: every push to `main` triggers the workflow at `.github/workflows/deploy.yml`, which builds the app with Vite and pushes the `dist/` output to the `gh-pages` branch.
+Deployments are automatic: every push to `main` triggers the workflow at `.github/workflows/deploy.yml`, which pushes the static files to the `gh-pages` branch. No build step is needed.
 
-**One-time manual step** (only needed once):  
+**One-time manual step** (only needed once):
 Go to **Settings → Pages → Build and deployment → Source**, select **Deploy from a branch**, then choose **`gh-pages`** / **`/ (root)`**.
 
 ---
@@ -113,7 +102,6 @@ Go to **Settings → Pages → Build and deployment → Source**, select **Deplo
 
 | Variable | Where | Description |
 |---|---|---|
-| `VITE_GEMINI_PROXY_URL` | GitHub Actions secret | Pre-fills the proxy URL in the built app |
 | `GEMINI_API_KEY` | Cloudflare Worker secret | Gemini API key — **never commit this** |
 
 ---
@@ -122,16 +110,16 @@ Go to **Settings → Pages → Build and deployment → Source**, select **Deplo
 
 ```
 htaccess-checker/
-├── src/
-│   ├── App.jsx          # Main React app
-│   └── main.jsx
+├── index.html             # Main HTML page
+├── js/
+│   └── app.js             # Application logic (vanilla JS)
+├── favicon.svg            # App icon
 ├── worker/
-│   ├── index.js         # Cloudflare Worker (Gemini proxy)
-│   └── wrangler.toml    # Worker configuration
+│   ├── index.js           # Cloudflare Worker (Gemini proxy)
+│   └── wrangler.toml      # Worker configuration
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml   # GitHub Pages CI/CD
-├── vite.config.js
-└── package.json
+│       └── deploy.yml     # GitHub Pages CI/CD
+└── .nojekyll              # Prevents Jekyll processing
 ```
 
